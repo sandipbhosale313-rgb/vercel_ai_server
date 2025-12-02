@@ -1,31 +1,39 @@
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
 import OpenAI from "openai";
+
+dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
+// POST API
 app.post("/api/chat", async (req, res) => {
   try {
-    const userMsg = req.body.messages[0].content;
+    const message = req.body.message; // <-- SINGLE message
+
+    if (!message) {
+      return res.status(400).json({ error: "Message missing!" });
+    }
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [
-        { role: "user", content: userMsg }
-      ]
+      messages: [{ role: "user", content: message }],
     });
 
-    res.json({ reply: completion.choices[0].message.content });
-
+    return res.json({ reply: completion.choices[0].message.content });
   } catch (error) {
-    res.json({ reply: "Server error: " + error });
+    console.log("SERVER ERROR:", error);
+    return res.status(500).json({ error: "Server crashed!" });
   }
 });
 
-app.listen(3000, () => console.log("Server running..."));
+// PORT (Vercel auto)
+app.listen(3000, () => console.log("Server running on 3000"));
+export default app;
