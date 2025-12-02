@@ -1,9 +1,6 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
-import OpenAI from "openai";
-
-dotenv.config();
+import { OpenAI } from "openai";
 
 const app = express();
 app.use(cors());
@@ -13,27 +10,28 @@ const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// POST API
 app.post("/api/chat", async (req, res) => {
   try {
-    const message = req.body.message; // <-- SINGLE message
+    const userMessage = req.body.message;   // <-- Flutter मधून "message" येईल
 
-    if (!message) {
-      return res.status(400).json({ error: "Message missing!" });
+    if (!userMessage) {
+      return res.status(400).json({ error: "Message missing" });
     }
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: message }],
+      messages: [
+        { role: "user", content: userMessage },
+      ],
     });
 
-    return res.json({ reply: completion.choices[0].message.content });
-  } catch (error) {
-    console.log("SERVER ERROR:", error);
-    return res.status(500).json({ error: "Server crashed!" });
+    const reply = completion.choices[0].message.content;
+
+    return res.json({ reply });
+  } catch (err) {
+    console.error("Server Error:", err);
+    return res.status(500).json({ error: err.toString() });
   }
 });
 
-// PORT (Vercel auto)
-app.listen(3000, () => console.log("Server running on 3000"));
-export default app;
+app.listen(3000, () => console.log("Server running on port 3000"));
